@@ -29,6 +29,11 @@ export default class Connection implements IConnection {
   public port: number;
 
   /**
+   * Server options.
+   */
+    public options: object;
+
+  /**
    * Login username.
    */
   public user: string;

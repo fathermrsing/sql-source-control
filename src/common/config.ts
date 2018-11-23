@@ -163,11 +163,15 @@ export default class Config implements IConfig {
       process.exit();
     }
 
-    return Object.assign(conn, {
-      options: {
-        encrypt: true
-      }
-    });
+    if (!conn.options) {
+        return Object.assign(conn, options);
+    } else {
+        return Object.assign(conn, {
+            options: {
+                encrypt: true
+            }
+        });
+    }
   }
 
   /**
