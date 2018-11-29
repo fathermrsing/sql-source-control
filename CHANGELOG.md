@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 <a name="2.0.3"></a>
 
-## [2.0.3](https://github.com/fathermrsing/sql-source-control/compare/v2.0.2...v2.0.3) (2018-11-23)
+## [2.0.3](https://github.com/justinlettau/sql-source-control/compare/v2.0.2...v2.0.3) (2018-11-23)
 
 
 <a name="2.0.2"></a>
