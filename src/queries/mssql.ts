@@ -149,34 +149,13 @@ export const typesRead: string = `
  * Get SQL information for procs, triggers, functions, etc.
  */
 export const objectsRead: string = `
-  SELECT
-    so.name,
-    s.name AS [schema],
-    so.type AS [type],
-    STUFF
-    (
-      (
-        SELECT
-          CAST(sc_inner.text AS varchar(max))
-        FROM
-          sys.objects so_inner
-          INNER JOIN syscomments sc_inner ON sc_inner.id = so_inner.object_id
-          INNER JOIN sys.schemas s_inner ON s_inner.schema_id = so_inner.schema_id
-        WHERE
-          so_inner.name = so.name
-          AND s_inner.name = s.name
-        FOR XML PATH(''), TYPE
-      ).value('(./text())[1]', 'varchar(max)')
-      ,1
-      ,0
-      ,''
-    ) AS [text]
-  FROM
-    sys.objects so
-    INNER JOIN syscomments sc ON sc.id = so.object_id AND so.type in ('P', 'V', 'TF', 'IF', 'FN', 'TR')
-    INNER JOIN sys.schemas s ON s.schema_id = so.schema_id
-  GROUP BY
-    so.name
-    ,s.name
-    ,so.type
+    SELECT
+        OBJECT_NAME(sm.object_id) AS name ,
+        s.name as [schema],
+        o.type,
+        sm.definition as text
+    FROM sys.sql_modules AS sm JOIN sys.objects AS o ON sm.object_id = o.object_id
+    left join sys.schemas As s on s.schema_id = o.schema_id
+    where type in ('P', 'V', 'TF', 'IF', 'FN', 'TR')
+    ORDER BY name
 `;

@@ -163,8 +163,8 @@ export default class Config implements IConfig {
       process.exit();
     }
 
-    if (!conn.options) {
-        return Object.assign(conn, options);
+    if (typeof conn.options === 'object') {
+        return Object.assign(conn, conn.options);
     } else {
         return Object.assign(conn, {
             options: {
