@@ -145,6 +145,7 @@ Configuration options are stored in a `ssc.json` file. The following properties 
 | `server`   | `string` | Server name.     | n/a     |
 | `database` | `string` | Database name.   | n/a     |
 | `port`     | `number` | Server port.     | n/a     |
+| `options`  | `object` | Server options   | {"encrypt": true}     |
 | `user`     | `string` | Login username.  | n/a     |
 | `password` | `string` | Login password.  | n/a     |
 

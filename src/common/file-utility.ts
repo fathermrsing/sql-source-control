@@ -52,6 +52,12 @@ export default class FileUtility {
   };
 
   /**
+   * read files content and convert to string.
+   */
+  public readFileSync(file: string): string {
+      return fs.readFileSync(file).toString();
+  }
+  /**
    * Write file to the file system.
    *
    * @param file Directory to write, relative to root.

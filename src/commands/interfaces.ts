@@ -28,3 +28,11 @@ export interface PushOptions {
   config?: string;
   skip?: boolean;
 }
+
+/**
+ * CLI arguments for `cat` command.
+ */
+export interface CatOptions {
+    config?: string;
+    skip?: boolean;
+}

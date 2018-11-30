@@ -51,5 +51,13 @@ program
   });
 
 program
+    .command('cat')
+    .description('Concatenate all SQL files into a single file.')
+    .action((name, options) => {
+        const action: Push = new Push(name, options);
+        action.invoke();
+    });
+
+program
   .version((pkg as any).version)
   .parse(process.argv);
