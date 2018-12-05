@@ -1,6 +1,6 @@
 {
   "name": "sql-source-control-follow",
-  "version": "2.0.11",
+  "version": "2.0.12",
   "description": "Simple CLI for getting SQL into source control systems.",
   "keywords": [
     "sql",
