@@ -3,6 +3,7 @@ import * as path from 'path';
 
 import Config from './config';
 import { ICache } from './interfaces';
+import Connection from './connection';
 
 /**
  * File checksum cache.
@@ -14,8 +15,9 @@ export default class Cache implements ICache {
    */
   public static readonly defaultCacheFile: string = 'cache.json';
 
-  constructor(config: Config) {
+  constructor(config: Config, con: Connection) {
     this.config = config;
+    this.conn = con;
   }
 
   /**
@@ -29,18 +31,25 @@ export default class Cache implements ICache {
   private config: Config;
 
   /**
+   * Current connection.
+   */
+  private conn: Connection;
+  /**
    * Load configuration options from file.
    */
   public load(): void {
     if (!this.doesDefaultExist()) {
       return;
     }
-
+    let file: string  = '' ;
     try {
-      const file: string = path.join(this.config.output.root, Cache.defaultCacheFile);
-      const cache: ICache = fs.readJsonSync(file);
-
-      this.files = cache.files;
+        if (this.conn.name > '') {
+            file = path.join(this.conn.name, Cache.defaultCacheFile);
+        } else {
+            file = path.join(this.config.output.root, Cache.defaultCacheFile);
+        }
+        const cache: ICache = fs.readJsonSync(file);
+        this.files = cache.files;
     } catch (error) {
       console.error(`Could not parse cache file. Try deleting the existing ${Cache.defaultCacheFile} file!`);
       process.exit();
@@ -85,9 +94,19 @@ export default class Cache implements ICache {
    * Write a config file with provided configuration.
    */
   public write(): void {
-    const file: string = path.join(this.config.output.root, Cache.defaultCacheFile);
-    const content: ICache = { files: this.files };
+    let file: string = '' ;
 
+    try {
+        if (this.conn.name > '') {
+            file = path.join(this.conn.name, Cache.defaultCacheFile);
+        } else {
+            file = path.join(this.config.output.root, Cache.defaultCacheFile);
+        }
+    } catch (error) {
+        console.error(`Could not find file!:${file}`);
+        process.exit();
+    }
+    const content: ICache = { files: this.files };
     fs.writeJson(file, content, { spaces: 2 });
   }
 
@@ -95,8 +114,18 @@ export default class Cache implements ICache {
    * Check if default cache file exists.
    */
   private doesDefaultExist(): boolean {
-    const file: string = path.join(this.config.output.root, Cache.defaultCacheFile);
+    let file: string = '' ;
 
+    try {
+        if (this.conn.name > '') {
+            file = path.join(this.conn.name, Cache.defaultCacheFile);
+        } else {
+            file = path.join(this.config.output.root, Cache.defaultCacheFile);
+        }
+    } catch (error) {
+      console.error(`Could not find file!:${file}`);
+      process.exit();
+    }
     return fs.existsSync(file);
   }
 }

@@ -8,6 +8,7 @@ import {
   SqlDataResult,
   SqlForeignKey,
   SqlIndex,
+  SqlIndexGroup,
   SqlObject,
   SqlPrimaryKey,
   SqlSchema,
@@ -51,6 +52,7 @@ export default class MSSQLGenerator {
         output += `TRUNCATE TABLE ${item.name}`;
         output += EOL;
         break;
+
     }
 
     output += EOL;
@@ -194,13 +196,20 @@ export default class MSSQLGenerator {
         output += '    ' + this.column(col) + ',';
         output += EOL;
       });
-
-    primaryKeys
-      .filter(x => x.object_id === item.object_id)
-      .forEach(pk => {
-        output += '    ' + this.primaryKey(pk);
+    /*
+    * PrimaryKey, charge the pkObjectIds.length,if
+    * >1, do primaryKeyMulti
+    * =1, do primaryKey
+    * =0,output =''
+    * */
+    const pkObjectIds: SqlPrimaryKey[] =  primaryKeys.filter(x => x.object_id === item.object_id);
+    if ( pkObjectIds.length > 1 ) {
+        output += '    ' + this.primaryKey(pkObjectIds);
         output += EOL;
-      });
+    } else if ( pkObjectIds.length === 1 ) {
+        output += '    ' + this.primaryKey(pkObjectIds);
+        output += EOL;
+    }
 
     output += ')';
 
@@ -220,12 +229,28 @@ export default class MSSQLGenerator {
     if (foreignKeys.length && indexes.length) {
       output += EOL;
     }
-
-    indexes.forEach(index => {
-      output += this.index(index);
-      output += EOL;
+    const indexsx: SqlIndexGroup[] = [];
+    indexes.forEach((v, index, arr) => {
+      let flag: number  = 0 ;
+      indexsx.forEach((vx, i, arrx) => {
+        if (indexsx[i].name === v.name) {
+          flag = 1;
+        }
+      });
+      if (flag === 0) {
+        indexsx.push({name: v.name, flag: 0});
+      }
     });
-
+    indexsx.forEach((vx, i, arrx) => {
+      indexes.filter(x => x.name === indexsx[i].name)
+      .forEach((v, index, arr) => {
+       if (vx.flag === 0) {
+           output += this.index(arr);
+           output += EOL;
+           vx.flag = 1;
+       }
+      });
+    });
     return output;
   }
 
@@ -357,7 +382,7 @@ export default class MSSQLGenerator {
     }
 
     if (isString(value)) {
-      value = value.replace("'", "''");
+      value = value.replace(/'/ig, "''");
       return `'${value}'`;
     }
 
@@ -434,14 +459,29 @@ export default class MSSQLGenerator {
   /**
    * Get script for table's primary key.
    *
-   * @param item Row from query.
+   * @param Row from query.
    */
-  private primaryKey(item: SqlPrimaryKey): string {
-    const direction: string = item.is_descending_key ? 'DESC' : 'ASC';
-
-    return `CONSTRAINT [${item.name}] PRIMARY KEY ([${item.column}] ${direction})`;
+  private primaryKey(arr: SqlPrimaryKey[]): string {
+    let output: string = '';
+    if ( arr.length > 1 ) {
+      arr.forEach((v, i, a) => {
+        const direction: string = a[i].is_descending_key ? 'DESC' : 'ASC';
+        if ( i === 0) {
+          output += `CONSTRAINT [${a[i].name}] PRIMARY KEY ([${a[i].column}] ${direction},`;
+        } else {
+          if ( i === ( a.length - 1 ) ) {
+            output += `[${a[i].column}] ${direction})`;
+          } else {
+            output += `[${a[i].column}] ${direction},`;
+          }
+        }
+      });
+    } else if ( arr.length === 1 ) {
+      const direction: string = arr[0].is_descending_key ? 'DESC' : 'ASC';
+      output += `CONSTRAINT [${arr[0].name}] PRIMARY KEY ([${arr[0].column}] ${direction})`;
+    }
+    return output;
   }
-
   /**
    * Get script for table's foreign key.
    *
@@ -489,23 +529,42 @@ export default class MSSQLGenerator {
   /**
    * Get script for table's indexes.
    *
-   * @param item Row from query.
+   * @param arr Row from query.
    */
-  private index(item: SqlIndex): string {
-    const objectId: string = `[${item.schema}].[${item.table}]`;
+  private index(arr: SqlIndex[]): string {
     let output: string = '';
-
-    output += `IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('${objectId}') AND name = '${item.name}')`;
-    output += EOL;
-    output += 'CREATE';
-
-    if (item.is_unique) {
-      output += ' UNIQUE';
+    if ( arr.length > 1 ) {
+      arr.forEach((v, i, a) => {
+        const direction: string = a[i].is_descending_key ? 'DESC' : 'ASC';
+        if ( i === 0) {
+          const objectId: string = `[${a[i].schema}].[${a[i].table}]`;
+          output += `IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('${objectId}') AND name = '${a[i].name}')`;
+          output += EOL;
+          output += 'CREATE';
+          if (a[i].is_unique) {
+            output += ' UNIQUE';
+          }
+          output += ` NONCLUSTERED INDEX [${a[i].name}] ON ${objectId}`;
+          output += `([${a[i].column}] ${a[i].is_descending_key ? 'DESC' : 'ASC'},`;
+        } else {
+          if ( i === ( a.length - 1 ) ) {
+            output += `[${a[i].column}] ${a[i].is_descending_key ? 'DESC' : 'ASC'})`;
+          } else {
+            output += `[${a[i].column}] ${a[i].is_descending_key ? 'DESC' : 'ASC'},`;
+          }
+        }
+      });
+    } else if ( arr.length === 1 ) {
+      const objectId: string = `[${arr[0].schema}].[${arr[0].table}]`;
+      output += `IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('${objectId}') AND name = '${arr[0].name}')`;
+      output += EOL;
+      output += 'CREATE';
+      if (arr[0].is_unique) {
+        output += ' UNIQUE';
+      }
+      output += ` NONCLUSTERED INDEX [${arr[0].name}] ON ${objectId}`;
+      output += `([${arr[0].column}] ${arr[0].is_descending_key ? 'DESC' : 'ASC'})`;
     }
-
-    output += ` NONCLUSTERED INDEX [${item.name}] ON ${objectId}`;
-    output += `([${item.column}] ${item.is_descending_key ? 'DESC' : 'ASC'})`;
-
     // todo (jbl): includes
 
     output += EOL;

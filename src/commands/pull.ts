@@ -83,7 +83,7 @@ export default class Pull {
             return results;
           });
       })
-      .then(results => this.writeFiles(config, results))
+      .then(results => this.writeFiles(config , conn , results))
       .catch(error => this.spinner.fail(error));
   }
 
@@ -91,9 +91,10 @@ export default class Pull {
    * Write all files to the file system based on `results`.
    *
    * @param config Current configuration to use.
+   * @param connection Current configuration to use.
    * @param results Array of data sets from SQL queries.
    */
-  private writeFiles(config: Config, results: any[]): void {
+  private writeFiles(config: Config , currentconn: Connection, results: any[]): void {
 
     // note: array order MUST match query promise array
     const objects: SqlObject[] = results[0].recordset;
@@ -106,7 +107,7 @@ export default class Pull {
     const data: SqlDataResult[] = results.slice(7);
 
     const generator: MSSQLGenerator = new MSSQLGenerator(config);
-    const file: FileUtility = new FileUtility(config);
+    const file: FileUtility = new FileUtility(config , currentconn);
 
     // schemas
     tables
@@ -117,7 +118,7 @@ export default class Pull {
         const name: string = `${item.name}.sql`;
         const content: string = generator.schema(item);
 
-        file.write(config.output.schemas, name, content);
+        file.write(`${config.output.schemas}`, name, content);
       });
 
     // stored procedures

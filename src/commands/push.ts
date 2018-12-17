@@ -20,11 +20,15 @@ export default class Push {
   private spinner = ora();
 
   /**
+   * current connection
+   */
+  private conn: Connection = null;
+  /**
    * Invoke actions.
    */
   public invoke(): void {
     const config: Config = new Config(this.options.config);
-    const conn: Connection = config.getConnection(this.name);
+    this.conn = config.getConnection(this.name);
 
     inquirer.prompt<inquirer.Answers>([
       {
@@ -45,7 +49,7 @@ export default class Push {
           throw new Error('Command aborted!');
         }
       })
-      .then(() => this.batch(config, conn))
+      .then(() => this.batch(config, this.conn))
       .then(() => this.spinner.succeed('Successfully pushed!'))
       .catch(error => this.spinner.fail(error));
   }
@@ -57,20 +61,22 @@ export default class Push {
    * @param conn Connection used to execute commands.
    */
   private batch(config: Config, conn: Connection): Promise<any> {
-    const files: string[] = this.getFilesOrdered(config);
+    const files: string[] = this.getFilesOrdered(config, this.conn);
     let promise: Promise<sql.ConnectionPool> = new sql.ConnectionPool(conn).connect();
 
     this.spinner.start(`Pushing to ${chalk.blue(conn.server)} ...`);
 
     files.forEach(file => {
       const content: string = fs.readFileSync(file, 'utf8');
-      const statements: string[] = content.split('GO' + EOL);
+      this.spinner.start(`Pushing to ${chalk.blue(`executing file:${file},content:${content}`)}`);
+      try {
+          promise = promise.then(pool => {
+              return pool.request().batch(content).then(() => pool);
+          });
+      } catch (e) {
+          this.spinner.start(`Pushing to ${chalk.blue(`executing file:${file},error:${e.tostring()}`)}`);
+      }
 
-      statements.forEach(statement => {
-        promise = promise.then(pool => {
-          return pool.request().batch(statement).then(() => pool);
-        });
-      });
     });
 
     return promise;
@@ -81,22 +87,21 @@ export default class Push {
    *
    * @param config Configuration used to search for connection.
    */
-  private getFilesOrdered(config: Config): string[] {
+  private getFilesOrdered(config: Config, connx: Connection): string[] {
     const output: string[] = [];
     const directories: string[] = [
-      config.output.schemas,
-      config.output.tables,
-      config.output.types,
-      config.output.views,
-      config.output.functions,
-      config.output.procs,
-      config.output.triggers,
-      config.output.data
+        config.output.schemas,
+        config.output.tables,
+        config.output.types,
+        config.output.views,
+        config.output.functions,
+        config.output.procs,
+        config.output.triggers,
+        config.output.data
     ] as string[];
-
     directories.forEach(dir => {
       if (dir) {
-        const files: string[] = glob.sync(`${config.output.root}/${dir}/**/*.sql`);
+        const files: string[] = glob.sync(`${connx.name}/${dir}/**/*.sql`);
         output.push(...files);
       }
     });

@@ -101,6 +101,14 @@ export interface SqlIndex {
 }
 
 /**
+ * SQL index object Group.
+ */
+export interface SqlIndexGroup {
+    name: string;
+    flag: number;
+}
+
+/**
  * SQL object.
  */
 export interface SqlObject extends AbstractSqlObject {

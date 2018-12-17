@@ -6,6 +6,7 @@ import * as glob from 'glob';
 import * as multimatch from 'multimatch';
 import * as path from 'path';
 
+import Connection from '../common/connection';
 import Cache from './cache';
 import Config from './config';
 import { OperationCounts } from './interfaces';
@@ -14,18 +15,24 @@ import { OperationCounts } from './interfaces';
  * File system interaction and tracking.
  */
 export default class FileUtility {
-  constructor(config: Config) {
+  constructor(config: Config , conn: Connection) {
     this.config = config;
-    this.existingCache = new Cache(config);
-    this.newCache = new Cache(config);
+    this.conn = conn;
+    this.existingCache = new Cache(config, this.conn);
+    this.newCache = new Cache(config, this.conn);
 
-    this.load();
+    this.load(config);
   }
 
   /**
    * Current configuration.
    */
   private config: Config;
+
+  /**
+   * Current configuration.
+   */
+  private conn: Connection;
 
   /**
    * Existing files.
@@ -75,9 +82,13 @@ export default class FileUtility {
     if (!this.shouldWrite(file)) {
       return;
     }
+    if ( this.config.output.root > '' ) {
+        file = path.join(this.config.output.root, dir, file);
+    } else {
+        file = path.join(this.conn.name, dir, file);
+    }
 
-    file = path.join(this.config.output.root, dir, file);
-    content = content.trim();
+    content = content.trim().replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '');
 
     const cacheKey: string = this.normalize(file);
     const cacheValue: string = checksum(content);
@@ -176,8 +187,14 @@ export default class FileUtility {
   /**
    * Load existing files and cache for comparison.
    */
-  private load(): void {
-    this.existingFiles = glob.sync(`${this.config.output.root}/**/*.sql`);
-    this.existingCache.load();
+  private load(c: Config): void {
+    if ( c.output.root === '' ) {
+        const conn: Connection = c.getConnection('');
+        this.existingFiles = glob.sync(`${conn.name}/**/*.sql`);
+        this.existingCache.load();
+    } else {
+        this.existingFiles = glob.sync(`${this.config.output.root}/**/*.sql`);
+        this.existingCache.load();
+    }
   }
 }

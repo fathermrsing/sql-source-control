@@ -150,7 +150,7 @@ export default class Config implements IConfig {
     let conn: Connection;
     let error: string;
 
-    if (name) {
+    if (name > '') {
       conn = conns.find(item => item.name.toLocaleLowerCase() === name.toLowerCase());
       error = `Could not find connection by name '${name}'!`;
     } else {

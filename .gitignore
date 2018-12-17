@@ -13,3 +13,4 @@ node_modules/
 ssc.json
 ssc-*.json
 Web.config
+*.sql

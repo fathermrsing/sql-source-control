@@ -6,6 +6,7 @@ import Init from './commands/init';
 import List from './commands/list';
 import Pull from './commands/pull';
 import Push from './commands/push';
+import Cat from './commands/cat';
 
 // check for updates
 updateNotifier({ pkg }).notify();
@@ -51,10 +52,11 @@ program
   });
 
 program
-    .command('cat')
+    .command('cat [name]')
     .description('Concatenate all SQL files into a single file.')
+    .option('-c, --config [value]', 'Relative path to config file.')
     .action((name, options) => {
-        const action: Push = new Push(name, options);
+        const action: Cat = new Cat(name, options);
         action.invoke();
     });
 
