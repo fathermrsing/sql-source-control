@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.0.13"></a>
+## [2.0.13](https://github.com/fathermrsing/sql-source-control/compare/v2.0.12...v2.0.13) (2018-12-17)
+
+
+
 <a name="2.0.12"></a>
 ## [2.0.12](https://github.com/fathermrsing/sql-source-control/compare/v2.0.11...v2.0.12) (2018-12-05)
 
