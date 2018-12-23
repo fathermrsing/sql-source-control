@@ -422,7 +422,6 @@ export default class MSSQLGenerator {
    */
   private column(item: SqlColumn): string {
     let output: string = `[${item.name}]`;
-    let size: string | number;
 
     if (item.is_computed) {
       output += ` AS ${item.formula}`;
@@ -437,15 +436,9 @@ export default class MSSQLGenerator {
       case 'varbinary':
       case 'binary':
       case 'text':
-        size = (item.max_length === -1 ? 'max' : item.max_length);
-        output += `(${size})`;
-        break;
       case 'nvarchar':
       case 'nchar':
       case 'ntext':
-        size = (item.max_length === -1 ? 'max' : item.max_length / 2);
-        output += `(${size})`;
-        break;
       case 'datetime2':
       case 'time2':
       case 'datetimeoffset':
