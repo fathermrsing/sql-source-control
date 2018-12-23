@@ -422,7 +422,6 @@ export default class MSSQLGenerator {
    */
   private column(item: SqlColumn): string {
     let output: string = `[${item.name}]`;
-
     if (item.is_computed) {
       output += ` AS ${item.formula}`;
       return output;
@@ -431,22 +430,30 @@ export default class MSSQLGenerator {
     output += ` ${item.datatype}`;
 
     switch (item.datatype) {
-      case 'varchar':
-      case 'char':
-      case 'varbinary':
-      case 'binary':
-      case 'text':
-      case 'nvarchar':
-      case 'nchar':
-      case 'ntext':
-      case 'datetime2':
-      case 'time2':
-      case 'datetimeoffset':
-        output += `(${item.scale})`;
-        break;
-      case 'decimal':
-        output += `(${item.precision}, ${item.scale})`;
-        break;
+        case 'varchar':
+            output += '(' + (item.max_length === -1 ? 'max' : item.max_length) + ')';
+            break;
+        case 'char':
+            output += '(' + (item.max_length === -1 ? 'max' : item.max_length) + ')';
+            break;
+        case 'varbinary': break;
+        case 'binary': break;
+        case 'text': break;
+        case 'nvarchar':
+            output += '(' + (item.max_length === -1 ? 'max' : item.max_length / 2) + ')';
+            break;
+        case 'nchar':
+            output += '(' + (item.max_length === -1 ? 'max' : item.max_length / 2) + ')';
+            break;
+        case 'ntext': break;
+        case 'datetime2': break;
+        case 'time2': break;
+        case 'datetimeoffset':
+            output += `(${item.scale})`;
+            break;
+        case 'decimal':
+            output += `(${item.precision}, ${item.scale})`;
+            break;
     }
 
     if (item.collation_name) {
