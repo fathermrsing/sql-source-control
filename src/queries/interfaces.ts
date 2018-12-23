@@ -86,6 +86,14 @@ export interface SqlForeignKey {
 }
 
 /**
+ * SQL foreign key object group.
+ */
+export interface SqlForeignKeyGroup {
+    name: string;
+    flag: number;
+}
+
+/**
  * SQL index object.
  */
 export interface SqlIndex {

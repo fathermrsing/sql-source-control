@@ -7,6 +7,7 @@ import {
   SqlColumn,
   SqlDataResult,
   SqlForeignKey,
+  SqlForeignKeyGroup,
   SqlIndex,
   SqlIndexGroup,
   SqlObject,
@@ -210,22 +211,38 @@ export default class MSSQLGenerator {
         output += '    ' + this.primaryKey(pkObjectIds);
         output += EOL;
     }
-
     output += ')';
 
     foreignKeys = foreignKeys.filter(x => x.object_id === item.object_id);
-    indexes = indexes.filter(x => x.object_id === item.object_id);
-
     if (foreignKeys.length || indexes.length) {
       output += EOL;
       output += EOL;
     }
-
-    foreignKeys.forEach(fk => {
-      output += this.foreignKey(fk);
-      output += EOL;
+    const fkIndex: SqlForeignKeyGroup[] = [];
+    foreignKeys.forEach((v, index, arr) => {
+        let flag: number  = 0 ;
+        fkIndex.forEach((vx, i, arrx) => {
+            if (fkIndex[i].name === v.name) {
+                flag = 1;
+            }
+        });
+        if (flag === 0) {
+            fkIndex.push({name: v.name, flag: 0});
+        }
     });
+    fkIndex.forEach((vx, i, arrx) => {
+        foreignKeys.filter(x => x.name === fkIndex[i].name)
+            .forEach((v, index, arr) => {
+                if (vx.flag === 0) {
+                    output += this.foreignKey(arr);
+                    output += EOL;
+                    vx.flag = 1;
+                }
+            });
+    });
+    output += EOL;
 
+    indexes = indexes.filter(x => x.object_id === item.object_id);
     if (foreignKeys.length && indexes.length) {
       output += EOL;
     }
@@ -487,43 +504,64 @@ export default class MSSQLGenerator {
    *
    * @param item Row from foreignKeys query.
    */
-  private foreignKey(item: SqlForeignKey): string {
-    const objectId: string = `[${item.schema}].[${item.table}]`;
-    const parentObjectId: string = `[${item.parent_schema}].[${item.parent_table}]`;
-    let output: string = '';
+  private foreignKey(arr: SqlForeignKey[]): string {
+      const item: SqlForeignKey = arr[0];
+      const objectId: string = `[${arr[0].schema}].[${arr[0].table}]`;
+      const parentObjectId: string = `[${arr[0].parent_schema}].[${arr[0].parent_table}]`;
+      let output: string = '';
+      let output1: string = '';
+      if ( arr.length > 1 ) {
+          arr.forEach((v, i, a) => {
+              if ( i === 0) {
+                  output += `ALTER TABLE ${objectId} WITH ${a[i].is_not_trusted ? 'NOCHECK' : 'CHECK'}`;
+                  output += ` ADD CONSTRAINT [${a[i].name}] FOREIGN KEY ([${a[i].column}],`;
 
-    output += `ALTER TABLE ${objectId} WITH ${item.is_not_trusted ? 'NOCHECK' : 'CHECK'}`;
-    output += ` ADD CONSTRAINT [${item.name}] FOREIGN KEY ([${item.column}])`;
-    output += ` REFERENCES ${parentObjectId} ([${item.reference}])`;
+                  output1 += ` REFERENCES ${parentObjectId} ([${a[i].reference}],`;
+              } else {
+                  if ( i === ( a.length - 1 ) ) {
+                      output += `[${a[i].column}])`;
+                      output1 += ` [${a[i].reference}])`;
+                  } else {
+                      output += `[${a[i].column}],`;
+                      output1 += `[${a[i].reference}],`;
+                  }
+              }
+          });
+          output += output1;
+      } else if ( arr.length === 1 ) {
 
-    switch (item.delete_referential_action) {
-      case 1:
-        output += ' ON DELETE CASCADE';
-        break;
-      case 2:
-        output += ' ON DELETE SET NULL';
-        break;
-      case 3:
-        output += ' ON DELETE SET DEFAULT';
-        break;
-    }
+          output += `ALTER TABLE ${objectId} WITH ${item.is_not_trusted ? 'NOCHECK' : 'CHECK'}`;
+          output += ` ADD CONSTRAINT [${item.name}] FOREIGN KEY ([${item.column}])`;
+          output += ` REFERENCES ${parentObjectId} ([${item.reference}])`;
+      }
 
-    switch (item.update_referential_action) {
-      case 1:
-        output += ' ON UPDATE CASCADE';
-        break;
-      case 2:
-        output += ' ON UPDATE SET NULL';
-        break;
-      case 3:
-        output += ' ON UPDATE SET DEFAULT';
-        break;
-    }
+      switch (item.delete_referential_action) {
+          case 1:
+              output += ' ON DELETE CASCADE';
+              break;
+          case 2:
+              output += ' ON DELETE SET NULL';
+              break;
+          case 3:
+              output += ' ON DELETE SET DEFAULT';
+              break;
+      }
 
-    output += EOL;
-    output += `ALTER TABLE ${objectId} CHECK CONSTRAINT [${item.name}]`;
-
-    return output;
+      switch (item.update_referential_action) {
+          case 1:
+              output += ' ON UPDATE CASCADE';
+              break;
+          case 2:
+              output += ' ON UPDATE SET NULL';
+              break;
+          case 3:
+              output += ' ON UPDATE SET DEFAULT';
+              break;
+      }
+      output += EOL;
+      output += `ALTER TABLE ${objectId} CHECK CONSTRAINT [${item.name}]`;
+      output += EOL;
+      return output;
   }
 
   /**
