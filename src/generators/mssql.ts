@@ -61,18 +61,24 @@ export default class MSSQLGenerator {
     output += EOL;
     output += EOL;
 
+    let counter: number = 0;
     item.result.recordset.forEach(row => {
       const keys: string[] = Object.keys(row);
       const columns: string = keys.join(', ');
       const values: string = keys.map(key => this.safeValue(row[key])).join(', ');
-
-      output += `INSERT INTO ${item.name} (${columns}) VALUES (${values})`;
+      if (counter === 0 ){
+        output += `INSERT INTO ${item.name} (${columns}) VALUES (${values})`;
+      }
+      else {
+        output += `,(${values})`;
+      }
+      counter++;
       output += EOL;
     });
 
     output += EOL;
     output += `SET IDENTITY_INSERT ${item.name} OFF`;
-
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 
@@ -102,7 +108,7 @@ export default class MSSQLGenerator {
     }
 
     output += item.text;
-
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 
@@ -132,7 +138,7 @@ export default class MSSQLGenerator {
     }
 
     output += item.text;
-
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 
@@ -147,6 +153,7 @@ export default class MSSQLGenerator {
     output += `IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = '${item.name}')`;
     output += EOL;
     output += `EXEC('CREATE SCHEMA ${item.name}')`;
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
 
     return output;
   }
@@ -192,10 +199,13 @@ export default class MSSQLGenerator {
     output += EOL;
 
     columns
-      .filter(x => x.object_id === item.object_id)
-      .forEach(col => {
-        output += '    ' + this.column(col) + ',';
-        output += EOL;
+      .filter(x => x.object_id === item.object_id).forEach((col , index, array) => {
+            if ( index !== 0 ) {
+                output += ',' ;
+                output += EOL;
+            }
+            output += '    ' + this.column(col) ;
+            output += EOL;
       });
     /*
     * PrimaryKey, charge the pkObjectIds.length,if
@@ -268,6 +278,7 @@ export default class MSSQLGenerator {
        }
       });
     });
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 
@@ -297,7 +308,7 @@ export default class MSSQLGenerator {
     }
 
     output += item.text;
-
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 
@@ -354,7 +365,7 @@ export default class MSSQLGenerator {
       });
 
     output += ')';
-
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 
@@ -384,7 +395,7 @@ export default class MSSQLGenerator {
     }
 
     output += item.text;
-
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 
@@ -469,7 +480,7 @@ export default class MSSQLGenerator {
     if (item.is_identity) {
       output += ` IDENTITY(${item.seed_value || 0}, ${item.increment_value || 1})`;
     }
-
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 
@@ -497,6 +508,7 @@ export default class MSSQLGenerator {
       const direction: string = arr[0].is_descending_key ? 'DESC' : 'ASC';
       output += `CONSTRAINT [${arr[0].name}] PRIMARY KEY ([${arr[0].column}] ${direction})`;
     }
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
   /**
@@ -561,6 +573,7 @@ export default class MSSQLGenerator {
       output += EOL;
       output += `ALTER TABLE ${objectId} CHECK CONSTRAINT [${item.name}]`;
       output += EOL;
+      output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
       return output;
   }
 
@@ -606,7 +619,7 @@ export default class MSSQLGenerator {
     // todo (jbl): includes
 
     output += EOL;
-
+    output = output.trim().replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
     return output;
   }
 }

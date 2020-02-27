@@ -88,8 +88,6 @@ export default class FileUtility {
         file = path.join(this.conn.name, dir, file);
     }
 
-    content = content.trim().replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '');
-
     const cacheKey: string = this.normalize(file);
     const cacheValue: string = checksum(content);
     this.newCache.add(cacheKey, cacheValue);
