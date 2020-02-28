@@ -22,10 +22,11 @@
     "url": "https://github.com/fathermrsing/sql-source-control"
   },
   "bugs": {
-    "url": "https://github.com/justinlettau/sql-source-control/issues"
+    "url": "https://github.com/fathermrsing/sql-source-control/issues"
   },
   "preferGlobal": true,
   "scripts": {
+    "install-first": "npm install",
     "lint": "tslint -c ./tslint.json -p ./tsconfig.json",
     "build": "tsc -p ./tsconfig.json",
     "prepublishOnly": "npm run build",

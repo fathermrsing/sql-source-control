@@ -209,6 +209,7 @@ export default class Config implements IConfig {
       Object.assign(this.idempotency, config.idempotency);
     } catch (error) {
       console.error('Could not find or parse config file. You can use the `init` command to create one!');
+      console.error(`details: '${error.toString()}'`);
       process.exit();
     }
   }

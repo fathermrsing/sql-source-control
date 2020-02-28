@@ -66,10 +66,9 @@ export default class MSSQLGenerator {
       const keys: string[] = Object.keys(row);
       const columns: string = keys.join(', ');
       const values: string = keys.map(key => this.safeValue(row[key])).join(', ');
-      if (counter === 0 ){
-        output += `INSERT INTO ${item.name} (${columns}) VALUES (${values})`;
-      }
-      else {
+      if (counter === 0 ) {
+        output += `INSERT INTO ${item.name} (${columns}) \n VALUES \n (${values})`;
+      } else {
         output += `,(${values})`;
       }
       counter++;
@@ -200,11 +199,11 @@ export default class MSSQLGenerator {
 
     columns
       .filter(x => x.object_id === item.object_id).forEach((col , index, array) => {
-            if ( index !== 0 ) {
-                output += ',' ;
-                output += EOL;
+            if ( index !== array.length - 1 ) {
+                output += '    ' + this.column(col) + ',';
+            } else {
+                output += '    ' + this.column(col);
             }
-            output += '    ' + this.column(col) ;
             output += EOL;
       });
     /*
